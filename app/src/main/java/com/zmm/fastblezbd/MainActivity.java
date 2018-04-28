@@ -686,6 +686,7 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     private void sendQishizhen() {
 
         mCountDownTimer.start();
+        mLoadbar.startload();
         mCurrentTimeMillis = System.currentTimeMillis();
 
         index = 0;
@@ -859,6 +860,10 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         System.out.println("i = " + i);
         byte[] bytes = {(byte) 0x9B, (byte) 0xFE, 0x4B, (byte) 0xC4, (byte) 0x9E, (byte) 0x99, 0x0D, 0x48, (byte) 0x90, 0x16};
         System.out.println("最后数据校验：" + Arrays.toString(bytes));
+
+        String s = "39.9049830000|116.4272870000|北京";
+        String[] split = s.split("\\|");
+        System.out.println("splite = "+Arrays.toString(split));
 
 
     }
