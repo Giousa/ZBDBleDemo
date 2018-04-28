@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -161,6 +162,10 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     private int mCount;//总个数
     private int mLength;//实际长度
 
+    private CountDownTimer mCountDownTimer;
+    private long mCurrentTimeMillis;
+    private boolean isFirst = true;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,6 +177,40 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         initRecyclerView();
         initBLE();
 
+        mCurrentTimeMillis = System.currentTimeMillis();
+
+        mCountDownTimer = new CountDownTimer(10000000, 1000) {
+            @Override
+            public void onTick(long l) {
+
+                if(isSendStart){
+                    long l1 = System.currentTimeMillis() - mCurrentTimeMillis;
+
+//                    System.out.println("每次间隔时长：l1 = "+l1);
+
+                    if(l1 > 2000){
+
+                        isFirst = false;
+
+                        System.out.println("超时1000ms，继续发送地址帧");
+                        int i = index * 256 / 4096;
+                        index = i * 4096 / 256;
+                        isSendDizhiZhen = true;
+                        isSendShujubao = false;
+                        //超时，继续发送地址帧
+                        sendQishizhen();
+                    }
+                }
+
+
+            }
+
+            @Override
+            public void onFinish() {
+            }
+        };
+
+        mCountDownTimer.start();
     }
 
     private void initRecyclerView() {
@@ -272,217 +311,6 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     }
 
 
-
-    /**
-     * 打开订阅
-     */
-    private void indicateBle() {
-        BleManager.getInstance().indicate(
-                mBleDevice,
-                "0000ffe1-0000-1000-8000-00805f9b34fb",
-                "0000ffe2-0000-1000-8000-00805f9b34fb",
-                new BleIndicateCallback() {
-
-
-                    @Override
-                    public void onIndicateSuccess() {
-                        // 打开通知操作成功
-//                        toast("通知成功");
-                        ToastUtils.SimpleToast("读写成功");
-                        mTvContent.append("读写成功\n");
-                        isOk = true;
-                        //
-                        mRecyclerView.setVisibility(View.GONE);
-                    }
-
-                    @Override
-                    public void onIndicateFailure(BleException exception) {
-                        // 打开通知操作失败
-//                        toast("通知失败");
-                        ToastUtils.SimpleToast("读写失败");
-                        mTvContent.append("读写失败\n");
-                    }
-
-                    @Override
-                    public void onCharacteristicChanged(byte[] data) {
-                        //[61, 120, 62, 60, 111, 107]
-//                        byte[] b = {'=','x','>','<','o','k'};
-                        int length = data.length;
-                        String s = Arrays.toString(data);
-                        System.out.println("读取数据 = "+s);
-
-                        if(data[0] == 111){
-                            //  o
-                            //地址帧发送成功，接下来发送数据包
-//                            System.out.println("地址帧发送成功");
-//                            System.out.println("开始发送数据包");
-                            isSendDizhiZhen = true;
-                            sendIndexShujubao();
-                        }else if(data[0] == 107){
-                            //  k
-                            //数据包发送成功，接下来发送地址帧
-//                            System.out.println("数据包发送成功");
-//                            System.out.println("开始发送地址帧");
-                            index++;
-                            if(index >= mCount){
-                                System.out.println("当前index = "+index+",count = "+mCount);
-                                System.out.println("复位");
-                                sendFuweizhen();
-
-                            }else {
-                                isSendShujubao = true;
-                                sendIndexDizhizhen();
-                            }
-
-
-                        }else if(data[0] == 120){
-                            // x
-                            //发送失败
-//                            index = 0;
-//                            isSendDizhiZhen = false;
-//                            isSendShujubao = false;
-//                            isSendStart = false;
-                            if(isChanpinZhen){
-                                System.out.println("产品帧：文件不匹配");
-                                System.out.println("不予升级！");
-                            }
-                        }else if(data[0] == 60){
-                            //<
-                            if(isBanbenZhen){
-                                System.out.println("版本帧：升级固件版本：旧");
-                                System.out.println("不予升级！");
-                            }
-
-
-                        }else if(data[0] == 61){
-                            //=
-                            if(isChanpinZhen){
-                                System.out.println("产品帧：文件匹配");
-                                System.out.println("开始发送版本帧：");
-                                sendBanbenzhen();
-
-                            }else if(isBanbenZhen){
-                                System.out.println("版本帧：升级固件版本：相同");
-                            }
-
-
-                        }else if(data[0] == 62){
-                            //>
-                            if(isBanbenZhen){
-                                System.out.println("版本帧：升级固件版本：新");
-                                System.out.println("开始升级：");
-                                sendDizhizhen();
-                            }
-
-
-                        }else if(data[0] == 42){
-                            //*
-                            System.out.println("设备返回*，自动升级！！！");
-                        }
-
-
-
-                        // 打开通知后，设备发过来的数据将在这里出现
-
-//                        int length = data.length;
-//                        String s = Arrays.toString(data);
-
-//                        mTvContent.append("数据个数222："+length+"\n");
-//                        mTvContent.append("data222：" + s + "\n");
-//                        System.out.println("读取数据 = "+s);
-
-//                        if (length >= 4) {
-//
-//                            if (length == 9) {
-//
-//
-//                                if (data[3] == -128) {
-//
-//                                    mTvContent.append("数据个数：" + length + "\n");
-//                                    mTvContent.append("data：" + s + "\n");
-//
-//                                    mModel = data[4];
-//                                    mSpeedLevel = data[5] & 0xFF;
-//                                    mSpeedValue = data[6] & 0xFF;
-//                                    mOffset = data[7] & 0xFF;
-//                                    mSpasmNum = data[8] & 0xFF;
-//                                } else if (data[7] == -122) {
-//
-//                                    mTvContent.setText("");
-//
-//                                    mTvContent.append("数据个数：" + length + "\n");
-//                                    mTvContent.append("停止data：" + s + "\n");
-//                                    mTvContent.append("————停止————\n");
-//
-//                                    ToastUtils.SimpleToast("————停止————");
-//                                }
-//
-//                            } else if (length == 4) {
-//
-//                                mTvContent.append("数据个数：" + length + "\n");
-//                                mTvContent.append("data：" + s + "\n");
-//
-//                                mSpasmLevel = data[0] & 0xFF;
-//                                mRes = data[1] & 0xFF;
-//                                mIntelligence = data[2];
-//                                mDirection = data[3];
-//                            } else if (length == 13 && data[3] == -128) {
-//
-//                                mTvContent.append("数据个数：" + length + "\n");
-//                                mTvContent.append("data：" + s + "\n");
-//
-//                                mModel = data[4];
-//                                mSpeedLevel = data[5] & 0xFF;
-//                                mSpeedValue = data[6] & 0xFF;
-//                                mOffset = data[7] & 0xFF;
-//                                mSpasmNum = data[8] & 0xFF;
-//                                mSpasmLevel = data[9] & 0xFF;
-//                                mRes = data[10] & 0xFF;
-//                                mIntelligence = data[11];
-//                                mDirection = data[12];
-//                            } else if (length == 5) {
-//
-//
-//                                int type = data[3] & 0xFF;
-//
-//                                System.out.println("type = " + type);
-//
-//                                if (type == 133) {
-//                                    mTvContent.setText("");
-//                                    mTvContent.append("数据个数：" + length + "\n");
-//                                    mTvContent.append("暂停data：" + s + "\n");
-//                                    mTvContent.append("————暂停————\n");
-//                                    ToastUtils.SimpleToast("————暂停————");
-//                                } else if (type == 134) {
-//                                    mTvContent.setText("");
-//                                    mTvContent.append("数据个数：" + length + "\n");
-//                                    mTvContent.append("停止data：" + s + "\n");
-//                                    mTvContent.append("————停止————\n");
-//                                    ToastUtils.SimpleToast("————停止————");
-//
-//                                }
-//
-//
-//                            } else if (length == 18) {
-//
-//                                int type = data[16] & 0xFF;
-//                                if (type == 134) {
-//                                    mTvContent.setText("");
-//                                    mTvContent.append("数据个数：" + length + "\n");
-//                                    mTvContent.append("停止data：" + s + "\n");
-//                                    mTvContent.append("————停止————\n");
-//                                    ToastUtils.SimpleToast("————停止————");
-//
-//                                }
-//                            }
-//
-//
-//                            dealData();
-//                        }
-//
-                    }
-                });
-    }
 
     /**
      * 处理数据
@@ -701,22 +529,6 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
                 ToastUtils.SimpleToast("连接成功");
                 mTvContent.append("连接成功\n");
                 indicateBle();
-
-//                BleManager.getInstance().setMtu(bleDevice, 258, new BleMtuChangedCallback() {
-//                    @Override
-//                    public void onSetMTUFailure(BleException exception) {
-//                        System.out.println("设置MTU失败");
-//                    }
-//
-//                    @Override
-//                    public void onMtuChanged(int mtu) {
-//                        System.out.println("设置MTU成功 mtu = "+mtu);
-//                    }
-//                });
-
-
-//                subscriberWrite(bleDevice);
-//                subscriberNotify(bleDevice);
             }
 
             @Override
@@ -859,6 +671,9 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
      */
     private void sendQishizhen() {
 
+        mCurrentTimeMillis = System.currentTimeMillis();
+
+        index = 0;
         mBytes = null;
         mBytes = FileUtils.File2byte(filePath);
         mLength = mBytes.length;
@@ -872,24 +687,15 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
         try {
             byte[] qishi = {'W','T','3','9','S','P','#','S','l','o','w',0x5D};
-
-//        String s = CheckUtils.checkcode_0007("SP#Slow");
-            int i = 0x07 ^ 0x5A;
-            System.out.println("s = "+i);
-
             //[61, 120, 62, 60, 111, 107]
-            byte[] b = {'=','x','>','<','o','k'};
-            System.out.println("判断条件："+Arrays.toString(b));
+//            byte[] b = {'=','x','>','<','o','k'};
+//            System.out.println("判断条件："+Arrays.toString(b));
 
             writeBleData(qishi);
 
             Thread.sleep(threadTime);
 
             sendChanpinzhen();
-//            Thread.sleep(threadTime);
-//
-//            sendBanbenzhen();
-//            Thread.sleep(threadTime);
 
         }catch (Exception e){
             e.printStackTrace();
@@ -912,7 +718,11 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         byte[] chanpin = {'W','T','3','9','S','P','?',bytes[16],bytes[17],bytes[18],bytes[19],(byte)(bcc2^0x5A)};
 
 
+        isBanbenZhen = false;
         isChanpinZhen = true;
+
+        mCurrentTimeMillis = System.currentTimeMillis();
+
         writeBleData(chanpin);
 
     }
@@ -921,24 +731,6 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
      * 版本帧
      */
     private void sendBanbenzhen() {
-
-        //AA 02 02 BB FF DD
-        //D77E D9E0
-        //02 02 02 02 02 02
-        //82B2 0AEB
-//        byte[] bys = {(byte) 0xAA,0x02,0x02, (byte) 0xBB, (byte) 0xFF, (byte) 0xDD};
-//        byte[] bys = {0x02,0x02,0x02, 0x02,0x02, 0x02};
-//        System.out.println("----------------");
-//        CrcUtil2.setParamCRC(bys);
-//        System.out.println("----------------");
-
-
-
-//        int i = 0x54 ^ 0x5A;
-//
-//        System.out.println("i = "+i);
-//
-//        byte[] banben = {'W','T','3','9','S','P','^','0','1','8','0', (byte) i};
 
         byte[] bytes = FileUtils.File2byte(filePath);
         System.out.println("bytes  = " + Arrays.toString(bytes));
@@ -958,19 +750,22 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     private void sendDizhizhen() {
 
         isBanbenZhen = false;
+        isChanpinZhen = false;
+        isSendShujubao = false;
+
+
         isSendStart = true;
-        index = 0;
-        isSendShujubao = true;
+        isSendDizhiZhen = true;
+
         sendIndexDizhizhen();
 
     }
 
     private void sendIndexDizhizhen() {
 
-        if(!isSendStart && !isSendShujubao){
+        if(!isSendStart && !isSendDizhiZhen){
             return;
         }
-
 
         //地址帧
         byte[] bytes1 = StringUtils.intToMinByteArray(256*index+1933312);
@@ -980,6 +775,9 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         System.out.println("sendIndexDizhizhen index = "+index);
 //        System.out.println("地址帧: "+Arrays.toString(dizhi2));
 
+        //记录时间戳
+        mCurrentTimeMillis = System.currentTimeMillis();
+
         writeBleData(dizhi2);
 
     }
@@ -988,7 +786,7 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
 
 
-        if(!isSendStart && !isSendDizhiZhen){
+        if(!isSendStart && !isSendShujubao){
             return;
         }
 
@@ -1020,125 +818,21 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         //CRC校验码 低字节在前,高字节在后
         byte[] bytesCRC = CrcUtil2.setParamCRC(bytes2);
 
-//        int i1 = CRCUtil.do_crc(bytes2);
-//        System.out.println("i1 = "+i1);
-//        byte[] bytesCRC16 = StringUtils.intToMinByteArray(i1);
-//        System.out.println("CRC16校验字节数组 = "+Arrays.toString(bytesCRC16));
-
-        //完整数据包
-//        byte[] bytes3 = new byte[258];
-//        for (int i = 0; i < bytes2.length; i++) {
-//            bytes3[i] = bytes2[i];
-//        }
-//        bytes3[256] = bytesCRC[0];
-//        bytes3[257] = bytesCRC[1];
-
-//        byte[] bytes3 = CrcUtil2.setParamCRC(bytes2);
-//        System.out.println("bytes3 length = "+bytes3.length);
-
         System.out.println("sendIndexShujubao index = "+index);
         if(index == mCount-1){
             System.out.println("最后一条数据包：");
             System.out.println("数据包: "+Arrays.toString(bytesCRC));
         }
-//        System.out.println("数据包: "+Arrays.toString(bytesCRC));
+
+
+        //记录时间戳
+        mCurrentTimeMillis = System.currentTimeMillis();
 
         writeBleData(bytesCRC);
     }
 
-//    private void sendDizhizhen() {
-//
-//        isSendStart = true;
-//
-//        try {
-//            byte[] bytes = FileUtils.File2byte(filePath);
-//
-//            int length = bytes.length;
-//
-//            System.out.println("length = "+length);
-//
-//            if(length <= 0){
-//                return;
-//            }
-//
-//            int count;
-//
-//            if(length % 256 == 0){
-//                count = length / 256;
-//            }else {
-//                count = length / 256 +1;
-//            }
-//
-//            System.out.println("count = "+count);
-//
-//            for (int k = 0; k < count; k++) {
-//
-//                //地址帧
-//                byte[] bytes1 = StringUtils.intToMinByteArray(256*k);
-//                byte[] dizhi = {'S','P','<',bytes1[0],bytes1[1],bytes1[2],0x01};
-//                int bcc2 = CheckUtils.getBCC2(dizhi);
-//                byte[] dizhi2 = {'W','T','3','9','S','P','<',bytes1[0],bytes1[1],bytes1[2],0x01,(byte)(bcc2^0x5A)};
-//                writeBleData(dizhi2);
-//
-//                Thread.sleep(threadTime);
-//
-//                //256字节数组的数据包
-//                byte[] bytes2 = new byte[256];
-//                if(k < count-1){
-//                    //256个字节
-//                    for (int i = 0; i < 256; i++) {
-//                        bytes2[i] = bytes[i+k*256];
-//                    }
-//                }else if(k == count-1){
-//                    //不够，补0
-//                    int i = (count-1) * 256;//i = 24576  24832  length = 24648
-//
-//                    for (int j = i; j < 256+i; j++) {
-////                        System.out.println("count = "+count);//97
-////                        System.out.println("i = "+i);//24576
-////                        System.out.println("length = "+length);//24648
-////                        System.out.println("j = "+j);
-//                        if(j >= length){
-//                            bytes2[j-i] = 0;
-//                        }else {
-//                            bytes2[j-i] = bytes[j];
-//                        }
-//                    }
-//
-//                }
-//
-//                //CRC校验码
-//                byte[] bytesCRC = CheckUtils.getBytesCRC2(bytes2);
-//
-//                //完整数据包
-//                byte[] bytes3 = new byte[258];
-//                for (int i = 0; i < bytes2.length; i++) {
-//                    bytes3[i] = bytes2[i];
-//                }
-//
-//                bytes3[256] = bytesCRC[0];
-//                bytes3[257] = bytesCRC[1];
-//
-//                System.out.println("数据包: "+Arrays.toString(bytes3));
-//
-//                writeBleData(bytes3);
-//                Thread.sleep(threadTime);
-//            }
-//
-//            //复位键
-//            sendFuweizhen();
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//
-//
-//
-//    }
-
     private void sendShujuzhen() {
 
-//        110, 48, -63, -59, 5, -106, 1, -101, -2, 75, -60, -98, -103, 13, 72, -112, 22
-        //9B FE 4B C4 9E 99 0D 48 90 16
 
         byte[] bytes1 = StringUtils.intToMinByteArray(1933312);
 
@@ -1151,26 +845,7 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         System.out.println("i = "+i);
         byte[] bytes = {(byte) 0x9B, (byte) 0xFE,0x4B, (byte) 0xC4, (byte) 0x9E, (byte) 0x99,0x0D,0x48, (byte) 0x90,0x16};
         System.out.println("最后数据校验："+Arrays.toString(bytes));
-//        byte[] bytes = FileUtils.File2byte(filePath);
-//        byte[] bytes2 = new byte[256];
-//        for (int i = 0; i < 256; i++) {
-//            bytes2[i] = bytes[i];
-//        }
-//
-//        byte[] bytesCRC = CheckUtils.getBytesCRC2(bytes2);
-//
-//        System.out.println("bytesCRC = "+Arrays.toString(bytesCRC));
-//        byte[] bytes3 = new byte[258];
-//        for (int i = 0; i < bytes2.length; i++) {
-//            bytes3[i] = bytes2[i];
-//        }
-//
-//        bytes3[256] = bytesCRC[0];
-//        bytes3[257] = bytesCRC[1];
-//
-//        System.out.println("数据包: "+Arrays.toString(bytes3));
-//
-//        writeBleData(bytes3);
+
 
     }
 
@@ -1187,6 +862,234 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
     }
 
+
+
+
+    /**
+     * 打开订阅
+     */
+    private void indicateBle() {
+        BleManager.getInstance().indicate(
+                mBleDevice,
+                "0000ffe1-0000-1000-8000-00805f9b34fb",
+                "0000ffe2-0000-1000-8000-00805f9b34fb",
+                new BleIndicateCallback() {
+
+
+                    @Override
+                    public void onIndicateSuccess() {
+                        // 打开通知操作成功
+//                        toast("通知成功");
+                        ToastUtils.SimpleToast("读写成功");
+                        mTvContent.append("读写成功\n");
+                        isOk = true;
+                        //
+                        mRecyclerView.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onIndicateFailure(BleException exception) {
+                        // 打开通知操作失败
+//                        toast("通知失败");
+                        ToastUtils.SimpleToast("读写失败");
+                        mTvContent.append("读写失败\n");
+                    }
+
+                    @Override
+                    public void onCharacteristicChanged(byte[] data) {
+                        //[61, 120, 62, 60, 111, 107]
+//                        byte[] b = {'=','x','>','<','o','k'};
+                        int length = data.length;
+                        String s = Arrays.toString(data);
+                        System.out.println("读取数据 = "+s);
+                        // 打开通知后，设备发过来的数据将在这里出现
+
+//                        int length = data.length;
+//                        String s = Arrays.toString(data);
+
+//                        mTvContent.append("数据个数222："+length+"\n");
+//                        mTvContent.append("data222：" + s + "\n");
+//                        System.out.println("读取数据 = "+s);
+//
+                        if (length >= 4) {
+
+                            if (length == 9) {
+
+
+                                if (data[3] == -128) {
+
+                                    mTvContent.append("数据个数：" + length + "\n");
+                                    mTvContent.append("data：" + s + "\n");
+
+                                    mModel = data[4];
+                                    mSpeedLevel = data[5] & 0xFF;
+                                    mSpeedValue = data[6] & 0xFF;
+                                    mOffset = data[7] & 0xFF;
+                                    mSpasmNum = data[8] & 0xFF;
+                                } else if (data[7] == -122) {
+
+                                    mTvContent.setText("");
+
+                                    mTvContent.append("数据个数：" + length + "\n");
+                                    mTvContent.append("停止data：" + s + "\n");
+                                    mTvContent.append("————停止————\n");
+
+                                    ToastUtils.SimpleToast("————停止————");
+                                }
+
+                            } else if (length == 4) {
+
+                                mTvContent.append("数据个数：" + length + "\n");
+                                mTvContent.append("data：" + s + "\n");
+
+                                mSpasmLevel = data[0] & 0xFF;
+                                mRes = data[1] & 0xFF;
+                                mIntelligence = data[2];
+                                mDirection = data[3];
+                            } else if (length == 13 && data[3] == -128) {
+
+                                mTvContent.append("数据个数：" + length + "\n");
+                                mTvContent.append("data：" + s + "\n");
+
+                                mModel = data[4];
+                                mSpeedLevel = data[5] & 0xFF;
+                                mSpeedValue = data[6] & 0xFF;
+                                mOffset = data[7] & 0xFF;
+                                mSpasmNum = data[8] & 0xFF;
+                                mSpasmLevel = data[9] & 0xFF;
+                                mRes = data[10] & 0xFF;
+                                mIntelligence = data[11];
+                                mDirection = data[12];
+                            } else if (length == 5) {
+
+
+                                int type = data[3] & 0xFF;
+
+                                System.out.println("type = " + type);
+
+                                if (type == 133) {
+                                    mTvContent.setText("");
+                                    mTvContent.append("数据个数：" + length + "\n");
+                                    mTvContent.append("暂停data：" + s + "\n");
+                                    mTvContent.append("————暂停————\n");
+                                    ToastUtils.SimpleToast("————暂停————");
+                                } else if (type == 134) {
+                                    mTvContent.setText("");
+                                    mTvContent.append("数据个数：" + length + "\n");
+                                    mTvContent.append("停止data：" + s + "\n");
+                                    mTvContent.append("————停止————\n");
+                                    ToastUtils.SimpleToast("————停止————");
+
+                                }
+
+
+                            } else if (length == 18) {
+
+                                int type = data[16] & 0xFF;
+                                if (type == 134) {
+                                    mTvContent.setText("");
+                                    mTvContent.append("数据个数：" + length + "\n");
+                                    mTvContent.append("停止data：" + s + "\n");
+                                    mTvContent.append("————停止————\n");
+                                    ToastUtils.SimpleToast("————停止————");
+
+                                }
+                            }
+
+
+                            dealData();
+                        }else {
+
+                            if(data[0] == 111){
+                                //  o
+                                //地址帧发送成功，接下来发送数据包
+//                            System.out.println("地址帧发送成功");
+//                            System.out.println("开始发送数据包");
+                                isSendDizhiZhen = false;
+                                isSendShujubao = true;
+                                sendIndexShujubao();
+                            }else if(data[0] == 107){
+                                //  k
+                                //数据包发送成功，接下来发送地址帧
+//                            System.out.println("数据包发送成功");
+//                            System.out.println("开始发送地址帧");
+                                index++;
+                                if(index >= mCount){
+                                    System.out.println("数据发送结束！！");
+                                    index = 0;
+                                    isSendStart = false;
+                                    isSendDizhiZhen = false;
+                                    isSendShujubao = false;
+                                    System.out.println("当前index = "+index+",count = "+mCount);
+                                    System.out.println("复位");
+                                    sendFuweizhen();
+
+                                }else {
+                                    isSendDizhiZhen = true;
+                                    isSendShujubao = false;
+                                    sendIndexDizhizhen();
+                                }
+
+
+                            }else if(data[0] == 120){
+                                // x
+                                //发送失败
+//                            index = 0;
+//                            isSendDizhiZhen = false;
+//                            isSendShujubao = false;
+//                            isSendStart = false;
+                                if(isChanpinZhen){
+                                    System.out.println("产品帧：文件不匹配");
+                                    System.out.println("不予升级！");
+                                }else if(isSendDizhiZhen || isSendShujubao){
+                                    //地址帧或者数据包出错的情况下
+                                    System.out.println("地址帧或者数据包出错，重新发送");
+                                    int i = index * 256 / 4096;
+                                    index = i * 4096 / 256;
+                                    isSendDizhiZhen = true;
+                                    isSendShujubao = false;
+                                    sendDizhizhen();
+                                }
+                            }else if(data[0] == 60){
+                                //<
+                                if(isBanbenZhen){
+                                    System.out.println("版本帧：升级固件版本：旧");
+                                    System.out.println("不予升级！");
+                                }
+
+
+                            }else if(data[0] == 61){
+                                //=
+                                if(isChanpinZhen){
+                                    System.out.println("产品帧：文件匹配");
+                                    System.out.println("开始发送版本帧：");
+                                    sendBanbenzhen();
+
+                                }else if(isBanbenZhen){
+                                    isSendStart = true;
+                                    isSendStart = false;
+                                    System.out.println("版本帧：升级固件版本：相同");
+                                }
+
+
+                            }else if(data[0] == 62){
+                                //>
+                                if(isBanbenZhen){
+                                    System.out.println("版本帧：升级固件版本：新");
+                                    System.out.println("开始升级：");
+                                    sendDizhizhen();
+                                }
+
+
+                            }else if(data[0] == 42){
+                                //*
+                                System.out.println("设备返回*，自动升级！！！");
+                            }
+
+                        }
+                    }
+                });
+    }
 
 
 }
