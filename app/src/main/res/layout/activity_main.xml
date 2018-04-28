@@ -2,35 +2,52 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:dpv="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <RelativeLayout
+        android:background="@color/colorPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.zmm.fastblezbd.view.LovelyProgressBar
+            android:id="@+id/loadbar"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            dpv:lineColor="@android:color/white"
+            dpv:lineWidth="8"/>
+    </RelativeLayout>
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
+
         <Button
             android:id="@+id/scan_ble"
-            android:text="开始扫描"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="开始扫描"/>
 
         <Button
             android:id="@+id/btn_start"
-            android:text="开始测量"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="开始测量"/>
 
         <Button
             android:id="@+id/btn_pause"
-            android:text="暂停测量"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="暂停测量"/>
 
     </LinearLayout>
 
@@ -41,17 +58,17 @@
 
         <Button
             android:id="@+id/btn_stop"
-            android:text="停止测量"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="停止测量"/>
 
         <Button
             android:id="@+id/btn_clear"
-            android:text="清空日志"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="清空日志"/>
 
     </LinearLayout>
 
@@ -59,26 +76,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
+
         <Button
             android:id="@+id/btn_qishi"
-            android:text="起始帧"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="起始帧"/>
 
         <Button
             android:id="@+id/btn_chanpin"
-            android:text="产品帧"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="产品帧"/>
 
         <Button
             android:id="@+id/btn_banben"
-            android:text="版本帧"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="版本帧"/>
 
     </LinearLayout>
 
@@ -86,40 +104,41 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
+
         <Button
             android:id="@+id/btn_dizhi"
-            android:text="地址帧"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="地址帧"/>
 
         <Button
             android:id="@+id/btn_shuju"
-            android:text="数据包"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="数据包"/>
 
         <Button
             android:id="@+id/btn_fuwei"
-            android:text="复位帧"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="复位帧"/>
 
     </LinearLayout>
 
     <View
-        android:background="@color/colorAccent"
         android:layout_width="match_parent"
-        android:layout_height="1dp"/>
+        android:layout_height="1dp"
+        android:background="@color/colorAccent"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="设置参数："
-        android:textStyle="bold"
-        android:textSize="20sp"/>
+        android:textSize="20sp"
+        android:textStyle="bold"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -130,12 +149,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
+
             <RadioButton
                 android:id="@+id/rb_model_bei"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="模式：被动"
-                android:checked="true"/>
+                android:checked="true"
+                android:text="模式：被动"/>
 
             <RadioButton
                 android:id="@+id/rb_model_zhu"
@@ -149,12 +169,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
+
             <RadioButton
                 android:id="@+id/rb_intel_open"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="智能：开启"
-                android:checked="true"/>
+                android:checked="true"
+                android:text="智能：开启"/>
 
             <RadioButton
                 android:id="@+id/rb_intel_close"
@@ -168,12 +189,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
+
             <RadioButton
                 android:id="@+id/rb_direc_zheng"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="方向：正转"
-                android:checked="true"/>
+                android:checked="true"
+                android:text="方向：正转"/>
 
             <RadioButton
                 android:id="@+id/rb_direc_fan"
@@ -189,29 +211,30 @@
             android:orientation="horizontal">
 
             <TextView
-                android:text="设定时间:"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="设定时间:"/>
+
             <EditText
                 android:id="@+id/et_time"
-                android:inputType="number"
-                android:text="5"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_height="wrap_content"/>
+                android:inputType="number"
+                android:text="5"/>
 
             <TextView
-                android:text="速度档位:"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="速度档位:"/>
 
             <EditText
                 android:id="@+id/et_speed"
-                android:inputType="number"
-                android:text="1"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_height="wrap_content"/>
+                android:inputType="number"
+                android:text="1"/>
 
         </LinearLayout>
 
@@ -221,29 +244,30 @@
             android:orientation="horizontal">
 
             <TextView
-                android:text="痉挛等级:"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="痉挛等级:"/>
+
             <EditText
                 android:id="@+id/et_spasm"
-                android:inputType="number"
-                android:text="1"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_height="wrap_content"/>
+                android:inputType="number"
+                android:text="1"/>
 
             <TextView
-                android:text="阻力等级:"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:text="阻力等级:"/>
 
             <EditText
                 android:id="@+id/et_resistance"
-                android:inputType="number"
-                android:text="1"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_height="wrap_content"/>
+                android:inputType="number"
+                android:text="1"/>
 
         </LinearLayout>
 
@@ -253,22 +277,22 @@
 
     <Button
         android:id="@+id/btn_device_set"
-        android:text="设置数据"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="设置数据"/>
 
 
     <View
-        android:background="@color/colorAccent"
         android:layout_width="match_parent"
-        android:layout_height="1dp"/>
+        android:layout_height="1dp"
+        android:background="@color/colorAccent"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="显示返回结果："
-        android:textStyle="bold"
-        android:textSize="20sp"/>
+        android:textSize="20sp"
+        android:textStyle="bold"/>
 
 
     <LinearLayout
@@ -278,24 +302,24 @@
 
         <TextView
             android:id="@+id/tv_model"
-            android:text="模式:主动"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="模式:主动"/>
 
         <TextView
             android:id="@+id/tv_speed_level"
-            android:text="速度档位：4"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="速度档位：4"/>
 
         <TextView
             android:id="@+id/tv_speed_value"
-            android:text="转速：14"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="转速：14"/>
 
     </LinearLayout>
 
@@ -306,24 +330,24 @@
 
         <TextView
             android:id="@+id/tv_speed_offset"
-            android:text="偏移：0"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="偏移：0"/>
 
         <TextView
             android:id="@+id/tv_spasm_num"
-            android:text="痉挛次数：12"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="痉挛次数：12"/>
 
         <TextView
             android:id="@+id/tv_spasm_level"
-            android:text="痉挛等级：4"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="痉挛等级：4"/>
 
 
     </LinearLayout>
@@ -335,44 +359,45 @@
 
         <TextView
             android:id="@+id/tv_resistance"
-            android:text="阻力：4"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="阻力：4"/>
 
         <TextView
             android:id="@+id/tv_intelligence"
-            android:text="智能：开启"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="智能：开启"/>
 
         <TextView
             android:id="@+id/tv_direction"
-            android:text="方向：正向"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:text="方向：正向"/>
 
     </LinearLayout>
 
     <View
-        android:background="@color/colorAccent"
         android:layout_width="match_parent"
-        android:layout_height="2dp"/>
+        android:layout_height="2dp"
+        android:background="@color/colorAccent"/>
 
 
     <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="可连设备："
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:textStyle="bold"/>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="100dp"/>
+
 
     <ScrollView
         android:layout_width="match_parent"

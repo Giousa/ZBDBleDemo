@@ -22,7 +22,6 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -32,21 +31,19 @@ import android.widget.Toast;
 import com.clj.fastble.BleManager;
 import com.clj.fastble.callback.BleGattCallback;
 import com.clj.fastble.callback.BleIndicateCallback;
-import com.clj.fastble.callback.BleMtuChangedCallback;
 import com.clj.fastble.callback.BleScanCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleDevice;
 import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.BleScanRuleConfig;
 import com.zmm.fastblezbd.adapter.BleListAdapter;
-import com.zmm.fastblezbd.utils.CRC16Utils;
-import com.zmm.fastblezbd.utils.CRCUtil;
 import com.zmm.fastblezbd.utils.CheckUtils;
 import com.zmm.fastblezbd.utils.CrcUtil2;
 import com.zmm.fastblezbd.utils.FileUtils;
 import com.zmm.fastblezbd.utils.StringUtils;
 import com.zmm.fastblezbd.utils.ToastUtils;
 import com.zmm.fastblezbd.utils.TypeUtil;
+import com.zmm.fastblezbd.view.LovelyProgressBar;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,6 +119,8 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     EditText mEtSpasm;
     @BindView(R.id.et_resistance)
     EditText mEtResistance;
+    @BindView(R.id.loadbar)
+    LovelyProgressBar mLoadbar;
 
 
     private BleListAdapter mBleListAdapter;
@@ -165,6 +164,8 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     private CountDownTimer mCountDownTimer;
     private long mCurrentTimeMillis;
     private boolean isFirst = true;
+    int progress = 0;
+
 
 
     @Override
@@ -173,22 +174,37 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        mLoadbar.startload();
 
         initRecyclerView();
         initBLE();
 
         mCurrentTimeMillis = System.currentTimeMillis();
 
-        mCountDownTimer = new CountDownTimer(10000000, 1000) {
+        mCountDownTimer = new CountDownTimer(10000000, 100) {
             @Override
             public void onTick(long l) {
 
-                if(isSendStart){
+                if (isSendStart) {
                     long l1 = System.currentTimeMillis() - mCurrentTimeMillis;
 
 //                    System.out.println("每次间隔时长：l1 = "+l1);
 
-                    if(l1 > 2000){
+                    if(isFirst){
+                        progress = index*100/mCount;
+                    }else {
+                        int i = index*100/ mCount;
+                        if(i > progress){
+                            progress = i;
+                        }
+                    }
+
+//                    System.out.println("当前进度：progress = "+progress);
+                    mLoadbar.setProgress(progress);
+
+                    if (l1 > 2000) {
+
+                        mCountDownTimer.cancel();
 
                         isFirst = false;
 
@@ -210,7 +226,8 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
             }
         };
 
-        mCountDownTimer.start();
+
+
     }
 
     private void initRecyclerView() {
@@ -236,8 +253,6 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
                 .setScanTimeOut(0)              // 扫描超时时间，可选，默认10秒；小于等于0表示不限制扫描时间
                 .build();
         BleManager.getInstance().initScanRule(scanRuleConfig);
-
-
 
 
     }
@@ -309,7 +324,6 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
                 break;
         }
     }
-
 
 
     /**
@@ -671,22 +685,23 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
      */
     private void sendQishizhen() {
 
+        mCountDownTimer.start();
         mCurrentTimeMillis = System.currentTimeMillis();
 
         index = 0;
         mBytes = null;
         mBytes = FileUtils.File2byte(filePath);
         mLength = mBytes.length;
-        System.out.println("mLength = "+mLength);//27726
+        System.out.println("mLength = " + mLength);//27726
 
-        if(mLength % 256 == 0){
+        if (mLength % 256 == 0) {
             mCount = mLength / 256;
-        }else {
-            mCount = mLength / 256 +1;
+        } else {
+            mCount = mLength / 256 + 1;
         }
 
         try {
-            byte[] qishi = {'W','T','3','9','S','P','#','S','l','o','w',0x5D};
+            byte[] qishi = {'W', 'T', '3', '9', 'S', 'P', '#', 'S', 'l', 'o', 'w', 0x5D};
             //[61, 120, 62, 60, 111, 107]
 //            byte[] b = {'=','x','>','<','o','k'};
 //            System.out.println("判断条件："+Arrays.toString(b));
@@ -697,7 +712,7 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
             sendChanpinzhen();
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -706,16 +721,16 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
     /**
      * 产品帧
      */
-    private void sendChanpinzhen(){
+    private void sendChanpinzhen() {
 
         byte[] bytes = FileUtils.File2byte(filePath);
         System.out.println("bytes  = " + Arrays.toString(bytes));
 
-        byte[] chanpin2 = {'S','P','?',bytes[16],bytes[17],bytes[18],bytes[19]};
+        byte[] chanpin2 = {'S', 'P', '?', bytes[16], bytes[17], bytes[18], bytes[19]};
 
         int bcc2 = CheckUtils.getBCC2(chanpin2);
 
-        byte[] chanpin = {'W','T','3','9','S','P','?',bytes[16],bytes[17],bytes[18],bytes[19],(byte)(bcc2^0x5A)};
+        byte[] chanpin = {'W', 'T', '3', '9', 'S', 'P', '?', bytes[16], bytes[17], bytes[18], bytes[19], (byte) (bcc2 ^ 0x5A)};
 
 
         isBanbenZhen = false;
@@ -734,10 +749,10 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
         byte[] bytes = FileUtils.File2byte(filePath);
         System.out.println("bytes  = " + Arrays.toString(bytes));
-        byte[] banben2 = {'S','P','^',bytes[12],bytes[13],bytes[14],bytes[15]};
+        byte[] banben2 = {'S', 'P', '^', bytes[12], bytes[13], bytes[14], bytes[15]};
         int bcc2 = CheckUtils.getBCC2(banben2);
 
-        byte[] banben = {'W','T','3','9','S','P','^',bytes[12],bytes[13],bytes[14],bytes[15],(byte)(bcc2^0x5A)};
+        byte[] banben = {'W', 'T', '3', '9', 'S', 'P', '^', bytes[12], bytes[13], bytes[14], bytes[15], (byte) (bcc2 ^ 0x5A)};
 
         isChanpinZhen = false;
         isBanbenZhen = true;
@@ -763,16 +778,16 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
     private void sendIndexDizhizhen() {
 
-        if(!isSendStart && !isSendDizhiZhen){
+        if (!isSendStart && !isSendDizhiZhen) {
             return;
         }
 
         //地址帧
-        byte[] bytes1 = StringUtils.intToMinByteArray(256*index+1933312);
-        byte[] dizhi = {'S','P','<',bytes1[0],bytes1[1],bytes1[2],0x01};
+        byte[] bytes1 = StringUtils.intToMinByteArray(256 * index + 1933312);
+        byte[] dizhi = {'S', 'P', '<', bytes1[0], bytes1[1], bytes1[2], 0x01};
         int bcc2 = CheckUtils.getBCC2(dizhi);
-        byte[] dizhi2 = {'W','T','3','9','S','P','<',bytes1[0],bytes1[1],bytes1[2],0x01,(byte)(bcc2^0x5A)};
-        System.out.println("sendIndexDizhizhen index = "+index);
+        byte[] dizhi2 = {'W', 'T', '3', '9', 'S', 'P', '<', bytes1[0], bytes1[1], bytes1[2], 0x01, (byte) (bcc2 ^ 0x5A)};
+        System.out.println("sendIndexDizhizhen index = " + index);
 //        System.out.println("地址帧: "+Arrays.toString(dizhi2));
 
         //记录时间戳
@@ -782,11 +797,10 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
     }
 
-    private void sendIndexShujubao(){
+    private void sendIndexShujubao() {
 
 
-
-        if(!isSendStart && !isSendShujubao){
+        if (!isSendStart && !isSendShujubao) {
             return;
         }
 
@@ -795,21 +809,21 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
 //        System.out.println("总个数："+mCount);
 //        System.out.println("索引开始："+index*256);
-        if(index < mCount-1){
+        if (index < mCount - 1) {
             //256个字节
 
             for (int i = 0; i < 256; i++) {
-                bytes2[i] = mBytes[i+index*256];
+                bytes2[i] = mBytes[i + index * 256];
             }
-        }else if(index == mCount-1){
+        } else if (index == mCount - 1) {
             //不够，补0
-            int i = (mCount-1) * 256;//i = 24576  24832  length = 24648
+            int i = (mCount - 1) * 256;//i = 24576  24832  length = 24648
 
-            for (int j = i; j < 256+i; j++) {
-                if(j >= mLength){
-                    bytes2[j-i] = 0;
-                }else {
-                    bytes2[j-i] = mBytes[j];
+            for (int j = i; j < 256 + i; j++) {
+                if (j >= mLength) {
+                    bytes2[j - i] = 0;
+                } else {
+                    bytes2[j - i] = mBytes[j];
                 }
             }
 
@@ -818,10 +832,10 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         //CRC校验码 低字节在前,高字节在后
         byte[] bytesCRC = CrcUtil2.setParamCRC(bytes2);
 
-        System.out.println("sendIndexShujubao index = "+index);
-        if(index == mCount-1){
+        System.out.println("sendIndexShujubao index = " + index);
+        if (index == mCount - 1) {
             System.out.println("最后一条数据包：");
-            System.out.println("数据包: "+Arrays.toString(bytesCRC));
+            System.out.println("数据包: " + Arrays.toString(bytesCRC));
         }
 
 
@@ -837,14 +851,14 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
         byte[] bytes1 = StringUtils.intToMinByteArray(1933312);
 
         //00 80 1D 01
-        byte[] bytesDi = {0x00, (byte) 0x80,0x1D,0x01};
-        System.out.println("bytesDi = "+Arrays.toString(bytesDi));
-        System.out.println("地址帧："+Arrays.toString(bytes1));
+        byte[] bytesDi = {0x00, (byte) 0x80, 0x1D, 0x01};
+        System.out.println("bytesDi = " + Arrays.toString(bytesDi));
+        System.out.println("地址帧：" + Arrays.toString(bytes1));
 
         byte i = '*';
-        System.out.println("i = "+i);
-        byte[] bytes = {(byte) 0x9B, (byte) 0xFE,0x4B, (byte) 0xC4, (byte) 0x9E, (byte) 0x99,0x0D,0x48, (byte) 0x90,0x16};
-        System.out.println("最后数据校验："+Arrays.toString(bytes));
+        System.out.println("i = " + i);
+        byte[] bytes = {(byte) 0x9B, (byte) 0xFE, 0x4B, (byte) 0xC4, (byte) 0x9E, (byte) 0x99, 0x0D, 0x48, (byte) 0x90, 0x16};
+        System.out.println("最后数据校验：" + Arrays.toString(bytes));
 
 
     }
@@ -853,16 +867,14 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
         //WT39SP*Boot
 
-        byte[] fuwei = {'S','P','*','B','o','o','t'};
+        byte[] fuwei = {'S', 'P', '*', 'B', 'o', 'o', 't'};
         int bcc2 = CheckUtils.getBCC2(fuwei);
 
-        byte[] fuwei2 = {'W','T','3','9','S','P','*','B','o','o','t',(byte)(bcc2^0x5A)};
+        byte[] fuwei2 = {'W', 'T', '3', '9', 'S', 'P', '*', 'B', 'o', 'o', 't', (byte) (bcc2 ^ 0x5A)};
 
         writeBleData(fuwei2);
 
     }
-
-
 
 
     /**
@@ -901,7 +913,7 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 //                        byte[] b = {'=','x','>','<','o','k'};
                         int length = data.length;
                         String s = Arrays.toString(data);
-                        System.out.println("读取数据 = "+s);
+                        System.out.println("读取数据 = " + s);
                         // 打开通知后，设备发过来的数据将在这里出现
 
 //                        int length = data.length;
@@ -998,9 +1010,9 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
 
 
                             dealData();
-                        }else {
+                        } else {
 
-                            if(data[0] == 111){
+                            if (data[0] == 111) {
                                 //  o
                                 //地址帧发送成功，接下来发送数据包
 //                            System.out.println("地址帧发送成功");
@@ -1008,40 +1020,44 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
                                 isSendDizhiZhen = false;
                                 isSendShujubao = true;
                                 sendIndexShujubao();
-                            }else if(data[0] == 107){
+                            } else if (data[0] == 107) {
                                 //  k
                                 //数据包发送成功，接下来发送地址帧
 //                            System.out.println("数据包发送成功");
 //                            System.out.println("开始发送地址帧");
                                 index++;
-                                if(index >= mCount){
+                                if (index >= mCount) {
                                     System.out.println("数据发送结束！！");
-                                    index = 0;
                                     isSendStart = false;
+                                    index = 0;
                                     isSendDizhiZhen = false;
                                     isSendShujubao = false;
-                                    System.out.println("当前index = "+index+",count = "+mCount);
+                                    System.out.println("当前index = " + index + ",count = " + mCount);
                                     System.out.println("复位");
                                     sendFuweizhen();
 
-                                }else {
+                                    //停止计时器，进度设为100
+                                    mCountDownTimer.cancel();
+                                    mLoadbar.setProgress(100);
+
+                                } else {
                                     isSendDizhiZhen = true;
                                     isSendShujubao = false;
                                     sendIndexDizhizhen();
                                 }
 
 
-                            }else if(data[0] == 120){
+                            } else if (data[0] == 120) {
                                 // x
                                 //发送失败
 //                            index = 0;
 //                            isSendDizhiZhen = false;
 //                            isSendShujubao = false;
 //                            isSendStart = false;
-                                if(isChanpinZhen){
+                                if (isChanpinZhen) {
                                     System.out.println("产品帧：文件不匹配");
                                     System.out.println("不予升级！");
-                                }else if(isSendDizhiZhen || isSendShujubao){
+                                } else if (isSendDizhiZhen || isSendShujubao) {
                                     //地址帧或者数据包出错的情况下
                                     System.out.println("地址帧或者数据包出错，重新发送");
                                     int i = index * 256 / 4096;
@@ -1050,38 +1066,38 @@ public class MainActivity extends AppCompatActivity implements BleListAdapter.On
                                     isSendShujubao = false;
                                     sendDizhizhen();
                                 }
-                            }else if(data[0] == 60){
+                            } else if (data[0] == 60) {
                                 //<
-                                if(isBanbenZhen){
+                                if (isBanbenZhen) {
                                     System.out.println("版本帧：升级固件版本：旧");
                                     System.out.println("不予升级！");
                                 }
 
 
-                            }else if(data[0] == 61){
+                            } else if (data[0] == 61) {
                                 //=
-                                if(isChanpinZhen){
+                                if (isChanpinZhen) {
                                     System.out.println("产品帧：文件匹配");
                                     System.out.println("开始发送版本帧：");
                                     sendBanbenzhen();
 
-                                }else if(isBanbenZhen){
+                                } else if (isBanbenZhen) {
                                     isSendStart = true;
                                     isSendStart = false;
                                     System.out.println("版本帧：升级固件版本：相同");
                                 }
 
 
-                            }else if(data[0] == 62){
+                            } else if (data[0] == 62) {
                                 //>
-                                if(isBanbenZhen){
+                                if (isBanbenZhen) {
                                     System.out.println("版本帧：升级固件版本：新");
                                     System.out.println("开始升级：");
                                     sendDizhizhen();
                                 }
 
 
-                            }else if(data[0] == 42){
+                            } else if (data[0] == 42) {
                                 //*
                                 System.out.println("设备返回*，自动升级！！！");
                             }
